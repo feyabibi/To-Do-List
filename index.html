@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>todos</title>
+    <link rel="stylesheet" type="text/css" href="css/base.css">
+    <link rel="stylesheet" type="text/css" href="css/index.css">
+    <script src="js/vue.js"></script>
+</head>
+
+<body>
+    <section class="todoapp">
+        <div>
+            <header class="header">
+                <h1>todos</h1>
+                <!--
+                    v-modeL双向绑定text中的文本  
+                    v-on:keyup.enter:表示enter键按下后触发事件addNewTodo
+                 -->
+                <input class="new-todo" value="" v-model="newTodoText" v-on:keyup.enter="addNewTodo" placeholder="what needs to be done?">
+            </header>
+            <!--   v-show渲染时 todos长度为0时 display为none 反之为block  -->
+            <section class="main" v-show='todos.length!==0'>
+                <input class="toggle-all" type="checkbox" v-model="alltoggle">
+                <ul class="todo-list">
+                    <!--   v-for循环todos里的每一项todo 根据数据里的数据渲染
+                    index是todo对应的下标
+                        v-bind:class当todo的属性为true时 添加一个class
+                    -->
+                    <li class="todo" v-for="(todo, index) in filteredTodos" v-bind:class="{completed:todo.toggle}" >
+                        <!-- v-modeL监控checkbox的变化 -->
+                        <input class="toggle" type="checkbox" v-model="todo.toggle">
+                        <!-- {{表文本}} 大胡子不接受语句和控制流-->
+                        <label>{{ todo.title }}</label>
+                        <!--  v-on:click 触发点击事件 用来删除该数据-->
+                        <button class="destroy" v-on:click="todos.splice(index, 1)"></button>
+                    </li>
+                </ul>
+            </section>
+            <footer class="footer" v-show='todos.length!==0'>
+                <span class="todo-count">
+                    <strong>{{n}}</strong>
+                    <span>条未选中</span>
+                </span>
+                <ul class="filters">
+                    <li><a href="#all" v-bind:class="{selected: visibility == 'all'}">All</a></li>
+                    <li><a href="#active" v-bind:class="{selected: visibility == 'active'}">Active</a></li>
+                    <li><a href="#completed" v-bind:class="{selected: visibility == 'completed'}">Completed</a></li>
+                </ul>
+                <button class="clear-completed" v-on:click="removeCompleted" v-show="todos.length > remaining">
+                    Clear completed
+                </button>
+            </footer>
+        </div>
+    </section>
+    <script>
+        window.onhashchange=function () {
+            tapp.visibility=window.location.hash.substr(1);
+        }
+        var filters = {
+            all: function (todos) {
+                return todos;
+            },
+            active (todos) {
+                return todos.filter(function (todo) {
+                    return !todo.toggle;
+                });
+            },
+            completed: function (todos) {
+                return todos.filter(function (todo) {
+                    return todo.toggle;
+                });
+            }
+        };
+    var tapp = new Vue({
+        el: '.todoapp',
+        data: {
+            n: 0,
+            alltoggle:false,
+            newTodoText: '',
+            visibility:'all',
+            todos: []
+        },
+        methods: {
+            addNewTodo() {
+                if (this.newTodoText) {
+                    this.todos.push({
+                        title: this.newTodoText,
+                        toggle: false
+                    });
+                    this.newTodoText = '';
+                }
+            },
+            deletadata() {
+                this.todos.splice(this.todo);
+            },
+            iszero(index) {
+                this.todos.splice(index, 1);
+            },
+            removeCompleted(){
+                this.todos = filters.active(this.todos);
+            }
+        },
+        computed: {
+            filteredTodos: function () {
+                return filters[this.visibility](this.todos);
+            },
+            remaining: function () {
+                return filters.active(this.todos).length;
+            },
+            allDone: {
+                get: function () {
+                    return this.remaining === 0;
+                },
+                set: function (value) {
+                    this.todos.forEach(function (todo) {
+                        todo.toggle = value;
+                    });
+                }
+            }
+        },
+        watch: {
+           // 普通监控watch格式
+            alltoggle:function () {
+                 // 监控全选状态是否发生改变
+                this.todos.forEach(function (todo) {
+                    todo.toggle=tapp.alltoggle;
+                });
+            },
+               
+            todos: {
+                // 深度 watcher
+                // 不应该使用箭头函数来定义 watcher 函数 (例如 searchQuery: newValue => this.updateAutocomplete(newValue))。理由是箭头函数绑定了父级作用域的上下文，所以 this 将不会按照期望指向 Vue 实例，this.updateAutocomplete 将是 undefined。
+                // 数据发送改变时触发
+                handler: function() {
+                    tapp.n=0;
+                    this.todos.forEach(function (todo) {
+                        if(!todo.toggle){
+                            tapp.n++;
+                        }
+                    });
+                },
+                // 监控数组内部值的改变,发生变化时触发
+                deep: true
+            }
+        }
+    });
+
+    </script>
+</body>
+
+</html>
